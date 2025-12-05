@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
 const stuffRoutes = require('./routes/book');
-
+const userRoutes = require('./routes/user');
 
 mongoose.connect('mongodb+srv://grimoir:grimoir@cluster-grimoir.xfqkilm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-Grimoir',
   { useNewUrlParser: true,
@@ -17,6 +17,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/stuff', stuffRouter);
+app.use('/api/auth', userRoutes);
 
 
 
