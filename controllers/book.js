@@ -4,19 +4,31 @@ const fs = require('fs');
 
 
 exports.createBook = (req, res, next) => {
-   const bookObject = JSON.parse(req.body.book);
-   delete bookObject._id;
-   delete bookObject._userId;
-   const book = new Book({
-       ...bookObject,
-       userId: req.auth.userId,
-       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-   });
- 
-   book.save()
-   .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
-   .catch(error => { res.status(400).json( { error })})
+  try {
+    const bookObject = JSON.parse(req.body.book);
+    delete bookObject._id;
+    delete bookObject._userId;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image obligatoire' });
+    }
+
+    const book = new Book({
+      ...bookObject,
+      userId: req.auth.userId,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+      ratings: [],
+      averageRating: 0
+    });
+
+    book.save()
+      .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
+      .catch(error => res.status(400).json({ error }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
+
 
 
 exports.getOneBook = (req, res, next) => {
