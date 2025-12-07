@@ -10,6 +10,7 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose-unique-validator": "^4.0.1",
