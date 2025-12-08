@@ -13,12 +13,12 @@ exports.createBook = (req, res, next) => {
       return res.status(400).json({ error: 'Image obligatoire' });
     }
 
-    const book = new Book({
+      const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-      ratings: [],
-      averageRating: 0
+      ratings: bookObject.ratings || [],
+      averageRating: bookObject.averageRating || 0
     });
 
     book.save()
