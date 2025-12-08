@@ -39,10 +39,7 @@ exports.getOneBook = (req, res, next) => {
       res.status(200).json(book);
     }
   ).catch(
-    (error) => {
-      res.status(404).json({
-        error: error
-      });
+    (error) => {  res.status(404).json({error: error});
     }
   );
 };
