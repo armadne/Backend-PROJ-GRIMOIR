@@ -31,17 +31,57 @@ exports.createBook = (req, res, next) => {
 
 
 
-exports.getOneBook = (req, res, next) => {
-  Book.findOne({
-    _id: req.params.id
-  }).then(
-    (book) => {
-      res.status(200).json(book);
+exports.getOneBook = async (req, res, next) => {
+  try {
+    const bookId = req.params.id;
+
+    const book = await Book.findOne({ _id: bookId }).lean();
+    if (!book) {
+      return res.status(404).json({ message: "Livre introuvable" });
     }
-  ).catch(
-    (error) => {  res.status(404).json({error: error});
+
+   
+    const isLogged =
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ");
+
+    let recommendations = [];
+    let sectionTitle = "";
+
+    if (isLogged) {
+      
+      recommendations = await Book.find({
+        _id: { $ne: bookId },
+        category: book.category, 
+      })
+        .limit(6)
+        .lean();
+
+      sectionTitle = "Livres similaires";
+
+    } else {
+      
+      recommendations = await Book.find({
+        _id: { $ne: bookId },
+        author: book.author,
+      })
+        .limit(6)
+        .lean();
+
+      sectionTitle = "Du même auteur";
     }
-  );
+
+    
+    return res.status(200).json({
+      ...book,            
+      sectionTitle,       
+      recommendations,    
+    });
+
+  } catch (error) {
+    console.error("Erreur getOneBook:", error);
+    return res.status(500).json({ error: error.message });
+  }
 };
 
 
@@ -101,4 +141,66 @@ exports.getAllBooks = (req, res, next) => {
       });
     }
   );
+};
+
+
+
+exports.getBestRatingBooks = async (req, res) => {
+  try {
+    const books = await Book.find()
+      .sort({ averageRating: -1 })  
+      .limit(3);                    
+
+    res.status(200).json(books);
+  } catch (error) {
+    res.status(400).json({ error });
+  }
+};
+
+
+
+
+exports.getSimilarBooks = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID invalide" });
+    }
+
+    const book = await Book.findById(id);
+    if (!book) return res.status(404).json({ message: "Livre non trouvé" });
+
+    const similarBooks = await Book.find({ 
+      genre: book.genre, 
+      _id: { $ne: book._id } 
+    }).limit(5); 
+
+    res.status(200).json(similarBooks);
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};
+
+
+exports.getBooksSameAuthor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID invalide" });
+    }
+
+    const book = await Book.findById(id);
+    if (!book) return res.status(404).json({ message: "Livre non trouvé" });
+
+    const booksSameAuthor = await Book.find({
+      author: book.author,
+      _id: { $ne: book._id }
+    }).limit(5); 
+
+    res.status(200).json(booksSameAuthor);
+  } catch (error) {
+    res.status(500).json({ error });
+  }
 };

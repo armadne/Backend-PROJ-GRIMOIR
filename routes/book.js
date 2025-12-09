@@ -8,6 +8,9 @@ const bookCtrl = require('../controllers/book');
 
 router.get('/', bookCtrl.getAllBooks);
 router.get('/:id', bookCtrl.getOneBook);
+
+router.get("/:id/similar", bookCtrl.getSimilarBooks);      
+router.get("/:id/sameauthor", bookCtrl.getBooksSameAuthor); 
 router.post('/', auth, multer, bookCtrl.createBook);
 
 router.put('/:id', auth, multer, bookCtrl.modifyBook);

@@ -9,7 +9,7 @@ const userRoutes = require('./routes/user');
 
 const app = express();
 
-// Middleware pour gérer CORS
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*'); 
   res.setHeader(
