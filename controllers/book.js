@@ -49,13 +49,14 @@ exports.getOneBook = async (req, res, next) => {
     let sectionTitle = "";
 
     if (isLogged) {
-      
-      recommendations = await Book.find({
-        _id: { $ne: bookId },
-        category: book.category, 
-      })
-        .limit(6)
-        .lean();
+
+        recommendations = await Book.find({
+      _id: { $ne: bookId },
+      genre: book.genre,
+    })
+      .limit(6)
+      .lean();
+
 
       sectionTitle = "Livres similaires";
 
@@ -143,64 +144,3 @@ exports.getAllBooks = (req, res, next) => {
   );
 };
 
-
-
-exports.getBestRatingBooks = async (req, res) => {
-  try {
-    const books = await Book.find()
-      .sort({ averageRating: -1 })  
-      .limit(3);                    
-
-    res.status(200).json(books);
-  } catch (error) {
-    res.status(400).json({ error });
-  }
-};
-
-
-
-
-exports.getSimilarBooks = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID invalide" });
-    }
-
-    const book = await Book.findById(id);
-    if (!book) return res.status(404).json({ message: "Livre non trouvé" });
-
-    const similarBooks = await Book.find({ 
-      genre: book.genre, 
-      _id: { $ne: book._id } 
-    }).limit(5); 
-
-    res.status(200).json(similarBooks);
-  } catch (error) {
-    res.status(500).json({ error });
-  }
-};
-
-
-exports.getBooksSameAuthor = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID invalide" });
-    }
-
-    const book = await Book.findById(id);
-    if (!book) return res.status(404).json({ message: "Livre non trouvé" });
-
-    const booksSameAuthor = await Book.find({
-      author: book.author,
-      _id: { $ne: book._id }
-    }).limit(5); 
-
-    res.status(200).json(booksSameAuthor);
-  } catch (error) {
-    res.status(500).json({ error });
-  }
-};
