@@ -12,4 +12,7 @@ router.post('/', auth, upload, processImage, bookCtrl.createBook);
 router.put('/:id', auth, upload, processImage, bookCtrl.modifyBook);
 router.delete('/:id', auth, bookCtrl.deleteBook);
 
+router.post('/:id/rating', auth, bookCtrl.rateBook);
+
+
 module.exports = router;

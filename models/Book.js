@@ -8,12 +8,13 @@ const BookSchema = mongoose.Schema({
   year: { type: Number, required: true },
   genre: { type: String, required: true },
   ratings: [
-    {
-      userId: { type: String, required: true },
-      grade: { type: Number, required: true }
-    }
-  ],
-  averageRating: { type: Number, default: 0 }
+  {
+    userId: { type: String, required: true },
+    grade: { type: Number, required: true }
+  }
+],
+averageRating: { type: Number }
+
 });
 
 module.exports = mongoose.model('Book', BookSchema);

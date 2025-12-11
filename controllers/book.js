@@ -1,6 +1,7 @@
 const Book = require('../models/Book');
 
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 
 exports.createBook = (req, res, next) => {
@@ -29,8 +30,6 @@ exports.createBook = (req, res, next) => {
   }
 };
 
-
-
 exports.getOneBook = async (req, res, next) => {
   try {
     const bookId = req.params.id;
@@ -40,28 +39,36 @@ exports.getOneBook = async (req, res, next) => {
       return res.status(404).json({ message: "Livre introuvable" });
     }
 
-   
-    const isLogged =
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ");
-
     let recommendations = [];
     let sectionTitle = "";
 
-    if (isLogged) {
+    // Vérifier si user connecté
+    const token = req.headers.authorization?.split(" ")[1];
+    let role = null;
 
-        recommendations = await Book.find({
-      _id: { $ne: bookId },
-      genre: book.genre,
-    })
-      .limit(6)
-      .lean();
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        role = decoded.role; // admin ou user
+      } catch (e) {
+        role = null;
+      }
+    }
 
+    // ADMIN CONNECTÉ → LIVRES SIMILAIRES (genre)
+    if (role === "admin") {
+      recommendations = await Book.find({
+        _id: { $ne: bookId },
+        genre: book.genre,
+      })
+        .limit(6)
+        .lean();
 
       sectionTitle = "Livres similaires";
+    }
 
-    } else {
-      
+    // USER CONNECTÉ OU NON → MÊME AUTEUR
+    else {
       recommendations = await Book.find({
         _id: { $ne: bookId },
         author: book.author,
@@ -72,11 +79,11 @@ exports.getOneBook = async (req, res, next) => {
       sectionTitle = "Du même auteur";
     }
 
-    
+    // 🔥 RENVOYER LES DONNÉES (manquant dans ton code)
     return res.status(200).json({
-      ...book,            
-      sectionTitle,       
-      recommendations,    
+      ...book,
+      sectionTitle,
+      recommendations,
     });
 
   } catch (error) {
@@ -84,8 +91,6 @@ exports.getOneBook = async (req, res, next) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
-
 
 exports.modifyBook = (req, res, next) => {
    const bookObject = req.file ? {
@@ -144,3 +149,37 @@ exports.getAllBooks = (req, res, next) => {
   );
 };
 
+
+
+exports.rateBook = async (req, res, next) => {
+  try {
+    const bookId = req.params.id;
+    const userId = req.auth.userId;
+    const grade = req.body.rating;
+
+    const book = await Book.findOne({ _id: bookId });
+
+    if (!book) {
+      return res.status(404).json({ message: "Livre introuvable" });
+    }
+
+    // Vérifier si user a déjà noté
+    const alreadyRated = book.ratings.find(r => r.userId === userId);
+    if (alreadyRated) {
+      return res.status(400).json({ message: "Vous avez déjà noté ce livre" });
+    }
+
+    book.ratings.push({ userId, grade });
+
+    // recalcul moyenne
+    const total = book.ratings.reduce((acc, r) => acc + r.grade, 0);
+    book.averageRating = total / book.ratings.length;
+
+    await book.save();
+
+    res.status(200).json(book);
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
