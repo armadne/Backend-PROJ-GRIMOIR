@@ -42,20 +42,20 @@ exports.getOneBook = async (req, res, next) => {
     let recommendations = [];
     let sectionTitle = "";
 
-    // Vérifier si user connecté
+    
     const token = req.headers.authorization?.split(" ")[1];
     let role = null;
 
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        role = decoded.role; // admin ou user
+        role = decoded.role; 
       } catch (e) {
         role = null;
       }
     }
 
-    // ADMIN CONNECTÉ → LIVRES SIMILAIRES (genre)
+  
     if (role === "admin") {
       recommendations = await Book.find({
         _id: { $ne: bookId },
@@ -67,7 +67,7 @@ exports.getOneBook = async (req, res, next) => {
       sectionTitle = "Livres similaires";
     }
 
-    // USER CONNECTÉ OU NON → MÊME AUTEUR
+   
     else {
       recommendations = await Book.find({
         _id: { $ne: bookId },
@@ -79,7 +79,7 @@ exports.getOneBook = async (req, res, next) => {
       sectionTitle = "Du même auteur";
     }
 
-    // 🔥 RENVOYER LES DONNÉES (manquant dans ton code)
+    
     return res.status(200).json({
       ...book,
       sectionTitle,
@@ -163,7 +163,7 @@ exports.rateBook = async (req, res, next) => {
       return res.status(404).json({ message: "Livre introuvable" });
     }
 
-    // Vérifier si user a déjà noté
+   
     const alreadyRated = book.ratings.find(r => r.userId === userId);
     if (alreadyRated) {
       return res.status(400).json({ message: "Vous avez déjà noté ce livre" });
@@ -171,7 +171,7 @@ exports.rateBook = async (req, res, next) => {
 
     book.ratings.push({ userId, grade });
 
-    // recalcul moyenne
+    
     const total = book.ratings.reduce((acc, r) => acc + r.grade, 0);
     book.averageRating = total / book.ratings.length;
 
