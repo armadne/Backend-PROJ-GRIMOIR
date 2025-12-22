@@ -34,63 +34,18 @@ exports.getOneBook = async (req, res, next) => {
   try {
     const bookId = req.params.id;
 
-    const book = await Book.findOne({ _id: bookId }).lean();
+    const book = await Book.findOne({ _id: bookId });
     if (!book) {
       return res.status(404).json({ message: "Livre introuvable" });
     }
 
-    let recommendations = [];
-    let sectionTitle = "";
-
-    
-    const token = req.headers.authorization?.split(" ")[1];
-    let role = null;
-
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        role = decoded.role; 
-      } catch (e) {
-        role = null;
-      }
-    }
-
-  
-    if (role === "admin") {
-      recommendations = await Book.find({
-        _id: { $ne: bookId },
-        genre: book.genre,
-      })
-        .limit(6)
-        .lean();
-
-      sectionTitle = "Livres similaires";
-    }
-
-   
-    else {
-      recommendations = await Book.find({
-        _id: { $ne: bookId },
-        author: book.author,
-      })
-        .limit(6)
-        .lean();
-
-      sectionTitle = "Du même auteur";
-    }
-
-    
-    return res.status(200).json({
-      ...book,
-      sectionTitle,
-      recommendations,
-    });
+    res.status(200).json(book);
 
   } catch (error) {
-    console.error("Erreur getOneBook:", error);
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.modifyBook = (req, res, next) => {
    const bookObject = req.file ? {
