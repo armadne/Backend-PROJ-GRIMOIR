@@ -48,9 +48,15 @@ const processImage = async (req, res, next) => {
     const outputPath = path.join(dir, webpFile);
 
     await sharp(originalPath)
-      .resize(400)
-      .webp({ quality: 80 })
-      .toFile(outputPath);
+  .resize({
+    width: 700,
+    height: 1000,
+    fit: 'contain',
+    background: { r: 255, g: 255, b: 255 }
+  })
+  .webp({ quality: 80 })
+  .toFile(tempPath);
+
 
     // On met à jour req.file pour utiliser le fichier webp
     req.file.webPath = outputPath;

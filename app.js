@@ -35,7 +35,7 @@ app.use('/api/auth', userRoutes);
 
 
 mongoose.connect(
-  'mongodb+srv://grimoir:grimoir@cluster-grimoir.xfqkilm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-Grimoir',
+  process.env.MONGO_URI,
   { useNewUrlParser: true, useUnifiedTopology: true }
 )
   .then(() => console.log('Connexion à MongoDB réussie !'))
