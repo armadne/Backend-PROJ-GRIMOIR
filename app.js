@@ -3,15 +3,19 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const helmet = require('helmet'); 
 
 const bookRoutes = require('./routes/book');
 const userRoutes = require('./routes/user');
 
-const helmet = require('helmet');
-
 const app = express();
 
-app.use(helmet());
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false
+  })
+);
 
 
 app.use((req, res, next) => {
@@ -29,7 +33,6 @@ app.use((req, res, next) => {
 
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-
 
 app.use(express.json());
 

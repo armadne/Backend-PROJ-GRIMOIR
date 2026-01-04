@@ -3,72 +3,61 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
+const IMAGE_DIR = path.resolve('images');
+
 const MIME_TYPES = {
   'image/jpg': 'jpg',
   'image/jpeg': 'jpg',
   'image/png': 'png'
 };
 
-const dir = 'images';
-if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir);
+if (!fs.existsSync(IMAGE_DIR)) {
+  fs.mkdirSync(IMAGE_DIR);
 }
 
-// Configuration du stockage Multer
+
 const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, dir);
-  },
-  filename: (req, file, callback) => {
-    const name = file.originalname.split(' ').join('_');
-    const extension = MIME_TYPES[file.mimetype];
-    callback(null, name + Date.now() + '.' + extension);
+  destination: (req, file, cb) => cb(null, IMAGE_DIR),
+  filename: (req, file, cb) => {
+    const name = path.parse(file.originalname).name.replace(/\s+/g, '_');
+    const ext = MIME_TYPES[file.mimetype];
+    cb(null, `${name}_${Date.now()}.${ext}`);
   }
 });
 
-// Filtrage des fichiers acceptés
-const fileFilter = (req, file, callback) => {
-  if (MIME_TYPES[file.mimetype]) {
-    callback(null, true);
-  } else {
-    callback(new Error('Format de fichier non supporté'), false);
-  }
+const fileFilter = (req, file, cb) => {
+  MIME_TYPES[file.mimetype] ? cb(null, true) : cb(new Error('Format non supporté'), false);
 };
 
 const upload = multer({ storage, fileFilter }).single('image');
 
-// Middleware de conversion en webp
+
 const processImage = async (req, res, next) => {
   if (!req.file) return next();
 
   try {
     const originalPath = req.file.path;
-    const filenameWithoutExt = path.parse(originalPath).name;
-    const webpFile = `${filenameWithoutExt}.webp`;
-    const outputPath = path.join(dir, webpFile);
+    const baseName = path.parse(originalPath).name;
+    const webpName = `${baseName}.webp`;
+    const webpPath = path.join(IMAGE_DIR, webpName);
 
     await sharp(originalPath)
-  .resize({
-    width: 700,
-    height: 1000,
-    fit: 'contain',
-    background: { r: 255, g: 255, b: 255 }
-  })
-  .webp({ quality: 80 })
-  .toFile(tempPath);
+      .resize(700, 1000, { fit: 'contain', background: { r: 255, g: 255, b: 255 } })
+      .webp({ quality: 80 })
+      .toFile(webpPath);
 
+    
+    if (originalPath !== webpPath) fs.unlink(originalPath, () => {});
 
-    // On met à jour req.file pour utiliser le fichier webp
-    req.file.webPath = outputPath;
-    req.file.filename = webpFile;
+    
+    req.file.filename = webpName;
+    req.file.path = webpPath;
     req.file.mimetype = 'image/webp';
 
-    // NE PAS supprimer le fichier original ici
-    // La suppression sera faite dans le controller après enregistrement dans MongoDB
     next();
-  } catch (error) {
-    console.error("Erreur traitement image :", error);
-    next(error);
+  } catch (err) {
+    console.error('Erreur traitement image ❌', err);
+    next(err);
   }
 };
 
